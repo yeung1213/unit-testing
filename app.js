@@ -122,6 +122,7 @@ app.post('/article', (req, res) => {
   }
   const token = req.body.token
   jwt.verify(token, 'shhhhh', function (err, decoded) {
+    if (err) return res.sendStatus(401)
     // console.log(decoded) // bar
     const article = new Article({
       title: req.body.title,

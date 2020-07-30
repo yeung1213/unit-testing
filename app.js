@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 
 const dbConfig = require("./config/db.config.js");
 const mongoose = require("mongoose");
+var jwt = require('jsonwebtoken');
 mongoose.Promise = global.Promise;
 
 const db = {};
@@ -29,6 +30,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const User = db.user;
+const Article = db.article;
 
 app.get("/", (req, res) => {
   res.status(200).send("Hello World!");
@@ -40,6 +42,32 @@ app.get('/users', (req, res) => {
       res.send(data);
     })
     .catch(err => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving tutorials."
+      });
+    });
+});
+
+app.post('/login', (req, res) => {
+  if (!req.body.username || !req.body.password) {
+    res.status(400).send({ message: "username or password can not be empty!" });
+    return;
+  }
+  User.find()
+    .then(data => {
+      for (const user of data) {
+        if (user.username === req.body.username && user.password === req.body.password) {
+          console.log('121213', user, jwt)
+          var token = jwt.sign(JSON.parse(JSON.stringify(user)), 'shhhhh');
+          console.log({ token })
+          return res.json({ token });
+        }
+      }
+      return res.sendStatus(400);
+    })
+    .catch(err => {
+      console.log(err)
       res.status(500).send({
         message:
           err.message || "Some error occurred while retrieving tutorials."
@@ -68,6 +96,51 @@ app.post('/users', (req, res) => {
           err.message || "Some error occurred while creating the User."
       });
     });
+});
+
+app.get('/articles', (req, res) => {
+
+  
+  Article.find()
+    .then(data => {
+      res.send(data);
+    })
+    .catch(err => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving tutorials."
+      });
+    });
+
+
+});
+
+app.post('/article', (req, res) => {
+  if (!req.body.title || !req.body.content) {
+    res.status(400).send({ message: "title or content can not be empty!" });
+    return;
+  }
+  const token = req.body.token
+  jwt.verify(token, 'shhhhh', function (err, decoded) {
+    // console.log(decoded) // bar
+    const article = new Article({
+      title: req.body.title,
+      content: req.body.content,
+      writer: decoded.username
+    });
+
+    article
+      .save(article)
+      .then(data => {
+        res.send(data);
+      })
+      .catch(err => {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while creating the Article."
+        });
+      });
+  });
 });
 
 module.exports = app;

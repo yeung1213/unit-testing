@@ -33,7 +33,11 @@ const User = db.user;
 const Article = db.article;
 
 app.get("/", (req, res) => {
-  res.status(200).send("Hello World!");
+  const token = req.body.token
+  jwt.verify(token, 'shhhhh', function (err, decoded) {
+    if (err) return res.sendStatus(401)
+    res.status(200).send("Hello World!");
+  })
 });
 
 app.get('/users', (req, res) => {
@@ -75,32 +79,37 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.post('/users', (req, res) => {
-  if (!req.body.username || !req.body.password) {
+app.post('/user', (req, res) => {
+  if (!req.body.username || !req.body.password || !req.body.token) {
     res.status(400).send({ message: "username or password can not be empty!" });
     return;
   }
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password
-  });
+  const token = req.body.token
+  jwt.verify(token, 'shhhhh', function (err, decoded) {
 
-  user
-    .save(user)
-    .then(data => {
-      res.send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the User."
-      });
+    if (err) return res.sendStatus(401)
+    const user = new User({
+      username: req.body.username,
+      password: req.body.password
     });
+
+    user
+      .save(user)
+      .then(data => {
+        res.send(data);
+      })
+      .catch(err => {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while creating the User."
+        });
+      });
+  });
 });
 
 app.get('/articles', (req, res) => {
 
-  
+
   Article.find()
     .then(data => {
       res.send(data);
@@ -116,7 +125,7 @@ app.get('/articles', (req, res) => {
 });
 
 app.post('/article', (req, res) => {
-  if (!req.body.title || !req.body.content) {
+  if (!req.body.title || !req.body.content || !req.body.token) {
     res.status(400).send({ message: "title or content can not be empty!" });
     return;
   }

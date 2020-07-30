@@ -41,16 +41,24 @@ app.get("/", (req, res) => {
 });
 
 app.get('/users', (req, res) => {
-  User.find()
-    .then(data => {
-      res.send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while retrieving tutorials."
+  if (!req.body.token) {
+    res.status(400).send({ message: "token can not be empty!" });
+    return;
+  }
+  const token = req.body.token
+  jwt.verify(token, 'shhhhh', function (err, decoded) {
+    if (err) return res.sendStatus(401)
+    User.find()
+      .then(data => {
+        res.send(data);
+      })
+      .catch(err => {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while retrieving tutorials."
+        });
       });
-    });
+  });
 });
 
 app.post('/login', (req, res) => {
@@ -81,7 +89,7 @@ app.post('/login', (req, res) => {
 
 app.post('/user', (req, res) => {
   if (!req.body.username || !req.body.password || !req.body.token) {
-    res.status(400).send({ message: "username or password can not be empty!" });
+    res.status(400).send({ message: "token or username or password can not be empty!" });
     return;
   }
   const token = req.body.token
@@ -126,7 +134,7 @@ app.get('/articles', (req, res) => {
 
 app.post('/article', (req, res) => {
   if (!req.body.title || !req.body.content || !req.body.token) {
-    res.status(400).send({ message: "title or content can not be empty!" });
+    res.status(400).send({ message: "title or content or token can not be empty!" });
     return;
   }
   const token = req.body.token
